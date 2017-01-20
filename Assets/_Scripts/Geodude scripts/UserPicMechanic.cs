@@ -17,7 +17,7 @@ public class UserPicMechanic : Photon.MonoBehaviour {
 
                 // How to instantiate an object:
                 // 1. Copy prefab "userPicPrefab"
-                // 2. At position "transform...forward)"
+                // 2. At position "transform.position + ... transform.forward)"
                 // 3. With rotation "rotation"
                 userPicObject = (GameObject)Instantiate(    
                     userPicPrefab,                          

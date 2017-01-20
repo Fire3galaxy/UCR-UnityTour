@@ -17,11 +17,10 @@ public class InstantiatePlayerObjects : Photon.MonoBehaviour {
         // Instantiate Menu controls for master client
         if (PhotonNetwork.isMasterClient) {
             Debug.Log("You are master client");
-            avatarGameObject.AddComponent<MasterClientControls>();
 
             GameObject menuObject = Instantiate(masterClientCanvas);
-            MasterClientControls controls = 
-                avatarGameObject.GetComponent<MasterClientControls>();
+            VideoControls controls = 
+                avatarGameObject.GetComponent<VideoControls>();
 
             Button button = menuObject.transform.GetComponentInChildren<Button>();
             button.onClick.AddListener(controls.MovePlayersToNextVideo);
