@@ -19,10 +19,10 @@ public class TourLogic : Photon.MonoBehaviour {
     private void SetupCardboardView() {
         // Add VR View
         //VRSettings.LoadDeviceByName("cardboard");
-        //VRSettings.enabled = true;
+        VRSettings.enabled = true;
         Screen.orientation = ScreenOrientation.LandscapeLeft;
         Instantiate(GvrViewerPrefab, Camera.main.transform);
-        //Instantiate(GvrReticlePrefab, Camera.main.transform);
+        Instantiate(GvrReticlePrefab, Camera.main.transform);
         Debug.Log("Should be in VR mode");
 
         // Change eventsystem input module

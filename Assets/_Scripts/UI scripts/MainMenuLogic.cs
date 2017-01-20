@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.VR;
 using System.Collections.Generic;
 
 public class MainMenuLogic : Photon.MonoBehaviour {
@@ -29,6 +30,11 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     private bool ConnectedInUpdate = false;
     private States GameState = States.HomeScreen;
 	
+    void Start() {
+        VRSettings.enabled = false;
+        Screen.orientation = ScreenOrientation.Portrait;
+    }
+
 	// Update is called once per frame
 	public virtual void Update ()
     {
@@ -195,5 +201,9 @@ public class MainMenuLogic : Photon.MonoBehaviour {
             roomItem.GetComponentInChildren<Text>().text = room.name;
             roomItem.GetComponent<Button>().onClick.AddListener(itemLogic.OnClickRoomItem);
         }
+    }
+
+    public void TestClick() {
+        Debug.Log("Clicked in test");
     }
 }

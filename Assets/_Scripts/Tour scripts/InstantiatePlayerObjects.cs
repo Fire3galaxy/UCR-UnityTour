@@ -22,12 +22,9 @@ public class InstantiatePlayerObjects : Photon.MonoBehaviour {
             GameObject menuObject = Instantiate(masterClientCanvas);
             MasterClientControls controls = 
                 avatarGameObject.GetComponent<MasterClientControls>();
-            
-            menuObject.transform
-                .FindChild("Button")
-                .GetComponent<Button>()
-                .onClick
-                .AddListener(controls.MovePlayersToNextVideo);
+
+            Button button = menuObject.transform.GetComponentInChildren<Button>();
+            button.onClick.AddListener(controls.MovePlayersToNextVideo);
         }
     }
 }
