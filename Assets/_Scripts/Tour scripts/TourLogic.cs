@@ -8,12 +8,12 @@ public class TourLogic : Photon.MonoBehaviour {
     public GameObject EventSystem;
     public GameObject GvrViewerPrefab;
     public GameObject GvrReticlePrefab;
-    public MediaPlayerCtrl mediaPlayer;
+    public TourVideos videoLibrary;
 
     public void SwitchToTourLogic() {
         UICanvas.SetActive(false); // Remove canvas
         SetupCardboardView();
-        //mediaPlayer.Play();
+        videoLibrary.PlayVideo();
     }
 
     private void SetupCardboardView() {

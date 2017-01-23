@@ -14,7 +14,8 @@ public class InstantiatePlayerObjects : Photon.MonoBehaviour {
             new Vector3(0, 0, 0), Quaternion.identity, 0);
         avatarGameObject.GetComponent<Renderer>().material.color = Color.cyan;
 
-        // Instantiate Menu controls for master client
+        // Instantiate Menu controls for master client &
+        // set up menu with video controls
         if (PhotonNetwork.isMasterClient) {
             Debug.Log("You are master client");
 

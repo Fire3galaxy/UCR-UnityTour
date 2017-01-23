@@ -2,11 +2,11 @@
 using System.Collections;
 
 public class VideoControls : Photon.MonoBehaviour {
-    MediaPlayerCtrl mediaPlayer;
+    TourVideos videoLibrary;
 
     void Start() {
-        mediaPlayer = GameObject.Find("Tour Objects/VideoManager")
-            .GetComponent<MediaPlayerCtrl>();
+        videoLibrary = GameObject.Find("Tour Objects/VideoManager")
+            .GetComponent<TourVideos>();
     }
 
     public void MovePlayersToNextVideo() {
@@ -17,5 +17,6 @@ public class VideoControls : Photon.MonoBehaviour {
     [PunRPC]
     private void ToNextVideo() {
         Debug.Log("Video change by master client");
+        videoLibrary.LoadAndPlayVideo("racing360.mp4");
     }
 }
