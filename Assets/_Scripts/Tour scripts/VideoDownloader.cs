@@ -25,6 +25,10 @@ public class VideoDownloader : MonoBehaviour {
         StartCoroutine(Save());
     }
 
+    // From laptop
+    // 93 MB -> 24 seconds
+    // 11 MB -> 3.5 seconds
+    // 16.7 MB -> ~5 seconds
     IEnumerator Save() {
         Debug.Log("In Save");
         //yield return null;
@@ -35,14 +39,15 @@ public class VideoDownloader : MonoBehaviour {
         //bf.Serialize(file, new Test("Flora", "Fira Root"));
         //file.Close();
 
+        float timeStart = Time.time;
         FileStream file = File.Open(
             Application.persistentDataPath + "/video.mp4", FileMode.Create);
-        WWW videoWWW = new WWW("https://www.dropbox.com/s/12vdxst6lta5ubg/stitched%20scene%20g.mp4?dl=1");
+        WWW videoWWW = new WWW("https://www.dropbox.com/s/9lps16modn1ye76/racing360-3.mp4?dl=1");
         yield return videoWWW;
         file.Write(videoWWW.bytes, 0, videoWWW.bytes.Length);
         file.Close();
 
-        Debug.Log("Done downloading and writing");
+        Debug.Log("Done downloading and writing. Time to download: " + (Time.time - timeStart).ToString());
     }
 
     void Load() {
