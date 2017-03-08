@@ -53,8 +53,12 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         HomeScreen.SetActive(true);
     }
 
-    public virtual void OnFailedToConnectToPhoton(DisconnectCause cause) {
+    public void OnFailedToConnectToPhoton(DisconnectCause cause) {
         Debug.LogError("OnFailedToConnectToPhoton(): " + cause.ToString());
+    }
+
+    public void OnConnectionFail(DisconnectCause cause) {
+        Debug.LogError("OnConnectionFail(): " + cause.ToString());
     }
 
     public virtual void OnJoinedRoom() {

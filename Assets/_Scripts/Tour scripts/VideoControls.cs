@@ -17,6 +17,6 @@ public class VideoControls : Photon.MonoBehaviour {
     [PunRPC]
     private void ToNextVideo() {
         Debug.Log("Video change by master client");
-        videoLibrary.LoadAndPlayVideo("racing360.mp4");
+        videoLibrary.LoadAndPlayVideo("http://www.dropbox.com/s/id12n92mmpr4n7s/racing360.mp4?dl=1");
     }
 }

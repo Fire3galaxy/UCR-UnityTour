@@ -3,11 +3,10 @@ using System.Collections;
 
 public class TourVideos : Photon.MonoBehaviour {
     public string FirstVideo;
-    private MediaPlayerCtrl mediaPlayer;
+    public MediaPlayerCtrl mediaPlayer;
     private bool playOnLoad = false;
 
     void Start() {
-        mediaPlayer = GetComponent<MediaPlayerCtrl>();
         mediaPlayer.OnReady += OnLoadedVideo;
         mediaPlayer.OnVideoError += OnVideoError;
         mediaPlayer.Load(FirstVideo);

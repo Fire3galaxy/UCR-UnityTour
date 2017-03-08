@@ -2081,13 +2081,13 @@ public class MediaPlayerCtrl : MonoBehaviour
 
 void LoadVideoPart2 ()
 {
-		
 		pStream = null;
 		pStreamAudio = null;
 
 		bool bFindVideo = false;
 
-	
+        string Daniel = "Daniel: ";
+
 		for (var i = 0; i < (pFormatContext)->nb_streams; i++)
 		{
 			if ((pFormatContext)->streams[i]->codec->codec_type == AVMediaType.AVMEDIA_TYPE_VIDEO)
@@ -2098,6 +2098,8 @@ void LoadVideoPart2 ()
 					pStream = (pFormatContext)->streams[i];
 					iStreamIndex = i;
 
+                    // Duration refers to video duration
+                    //Debug.Log(Daniel + (pStream->duration * pStream->time_base.num / pStream->time_base.den));
 					Debug.Log("Video" +  iStreamIndex);
 				}
 
@@ -2306,9 +2308,6 @@ AVHWAccel *ff_find_hwaccel( AVCodecID codec_id,  AVPixelFormat pix_fmt)
 
     private void ThreadUpdate()
     {
-
-
-
         /*lock (listVideo)
         {
             if (listVideo != null)
@@ -2328,8 +2327,6 @@ AVHWAccel *ff_find_hwaccel( AVCodecID codec_id,  AVPixelFormat pix_fmt)
 
         while (true)
         {
-      
-
             if (listVideo != null)
             {
                 while (listVideo.Count >30 || bEnd == true )
@@ -2337,21 +2334,11 @@ AVHWAccel *ff_find_hwaccel( AVCodecID codec_id,  AVPixelFormat pix_fmt)
                     Thread.Sleep(5);
                 }
             }
+               
+            // if( m_CurrentState == MEDIAPLAYER_STATE.PLAYING)
             
-
-            
-            
-           // if( m_CurrentState == MEDIAPLAYER_STATE.PLAYING)
-
-      
-       
-
-
-   
             UpdateVideo();
 			Thread.Sleep(1);
-      
-           
         
             //Thread.Sleep(5);
         }
@@ -2362,291 +2349,146 @@ AVHWAccel *ff_find_hwaccel( AVCodecID codec_id,  AVPixelFormat pix_fmt)
 	{
 		var gotPicture = 0;
 		var gotSound = 0;
-        
-		
-			
+        			
 		if( m_CurrentState != MEDIAPLAYER_STATE.PAUSED)
 		{
 			if (pPacket != null) 
             {
 				if (pPacket->stream_index == iStreamIndex) {
-
-
 					var size = ffmpeg.avcodec_decode_video2 (pCodecContext, pDecodedFrame, &gotPicture, pPacket);
 					if (size < 0) {
 						throw new ApplicationException (string.Format (@"Error while decoding frame "));
 					}
-
-
-
-
-						if ((ulong)pPacket->dts != ffmpeg.AV_NOPTS_VALUE) {
-							pts = ffmpeg.av_frame_get_best_effort_timestamp (pDecodedFrame);
-						} else {
-							pts = 0;
-						}
-
-						pts *= av_q2d (pStream->time_base);
-
-						
-
-				        
-							
-		
-
-
-						if (gotPicture == 1) {
-							if (pts > 0) {
-                                if (listVideo.Count > 5)
-                                {
-                                    if (!m_bIsFirstFrameReady) {
-
-								//Debug.Log("FistReady"  + listVideo.Count);
-                                        m_bIsFirstFrameReady = true;
-
-
-										bVideoFirstFrameReady = true;
-                                        
-                                    }
-                                }
-								
-							}
-
-							//Debug.Log ("Video " + pts);
-
-							//fLastFrameTime = (float)pts;
-							
-
-							sbyte** src = &pDecodedFrame->data0;
-							sbyte** dst = &pConvertedFrame->data0;
-							int* srcStride = pDecodedFrame->linesize;
-							int* dstStride = pConvertedFrame->linesize;
-
-
-							ffmpeg.sws_scale (pConvertContext, src, srcStride, 0, m_iHeight, dst, dstStride);
-
-
-							sbyte* convertedFrameAddress = pConvertedFrame->data0;
-                            var imageBufferPtr = new IntPtr (convertedFrameAddress);
-
-                            byte[] buffer = new byte[4* m_iWidth *m_iHeight];
-                            Marshal.Copy(imageBufferPtr,buffer,0,4* m_iWidth *m_iHeight);
-
-                            lock (listVideo)
-                            {
-                                listVideo.Enqueue(buffer);
-                                lock (listVideoPts)
-                                {
-                                    listVideoPts.Enqueue((float)pts);
-                                }
-
-
-                                
-                            }
-
-                            
-
-
-						}
-					}
-				} else {
-					pPacket = (AVPacket*)Marshal.AllocCoTaskMem(sizeof(AVPacket));
-
-					ffmpeg.av_init_packet(pPacket);
-				}
-				
-		
-				
-				
-
-				do{
-
-					if (pPacket != null) 
-					{
-						ffmpeg.av_free_packet (pPacket);
-					}
-
-                    int ret  = ffmpeg.av_read_frame( pFormatContext, pPacket);
                     
-					if( bInterrupt == true && listVideo.Count > 20 )
-					{
-						//Debug.Log ("11");
-						bInterrupt = false;
-						pFormatContext->interrupt_callback.callback = Marshal.GetFunctionPointerForDelegate(action);
+					if ((ulong)pPacket->dts != ffmpeg.AV_NOPTS_VALUE) {
+						pts = ffmpeg.av_frame_get_best_effort_timestamp (pDecodedFrame);
+					} else {
+						pts = 0;
 					}
 
-                    if ( ret < 0)
-					{
-                        
-                        if( ret == -541478725)
-                        {
+					pts *= av_q2d (pStream->time_base);
+                    
+					if (gotPicture == 1) {
+						if (pts > 0) {
+                            if (listVideo.Count > 5)
+                            {
+                                if (!m_bIsFirstFrameReady) {
+							        //Debug.Log("FistReady"  + listVideo.Count);
+                                    m_bIsFirstFrameReady = true;
+									bVideoFirstFrameReady = true;
+                                }
+                            }
+								
+						}
 
-							if(listVideo.Count < 3)
-							{
-		                          bEnd= true;
+						//Debug.Log ("Video " + pts);
 
-									//threadVideo.Abort();
-
-		                          return;
-							}
-                        }
-						else
-                        {   
-							throw new ApplicationException(@"Could not read frame");
-                        }
-
-
+						//fLastFrameTime = (float)pts;
 						
+						sbyte** src = &pDecodedFrame->data0;
+						sbyte** dst = &pConvertedFrame->data0;
+						int* srcStride = pDecodedFrame->linesize;
+						int* dstStride = pConvertedFrame->linesize;
+                        
+						ffmpeg.sws_scale (pConvertContext, src, srcStride, 0, m_iHeight, dst, dstStride);
+                        
+						sbyte* convertedFrameAddress = pConvertedFrame->data0;
+                        var imageBufferPtr = new IntPtr (convertedFrameAddress);
+
+                        byte[] buffer = new byte[4* m_iWidth *m_iHeight];
+                        Marshal.Copy(imageBufferPtr,buffer,0,4* m_iWidth *m_iHeight);
+
+                        lock (listVideo)
+                        {
+                            listVideo.Enqueue(buffer);
+                            lock (listVideoPts)
+                            {
+                                listVideoPts.Enqueue((float)pts);
+                            }
+                        }
 					}
+				}
+			} else {
+				pPacket = (AVPacket*)Marshal.AllocCoTaskMem(sizeof(AVPacket));
+
+				ffmpeg.av_init_packet(pPacket);
+			}
+			
+			do{
+				if (pPacket != null) 
+				{
+					ffmpeg.av_free_packet (pPacket);
+				}
+
+                int ret  = ffmpeg.av_read_frame( pFormatContext, pPacket);
+                    
+				if( bInterrupt == true && listVideo.Count > 20 )
+				{
+					//Debug.Log ("11");
+					bInterrupt = false;
+					pFormatContext->interrupt_callback.callback = Marshal.GetFunctionPointerForDelegate(action);
+				}
+
+                if ( ret < 0)
+				{            
+                    if( ret == -541478725)
+                    {
+						if(listVideo.Count < 3)
+						{
+		                        bEnd= true;
+
+								//threadVideo.Abort();
+
+		                        return;
+						}
+                    }
+					else
+                    {   
+						throw new ApplicationException(@"Could not read frame");
+                    }	
+				}
 
                    
 
 					
-           // Debug.Log(pPacket->pts + " " + pCodecContext->pts_correction_last_pts );
+        // Debug.Log(pPacket->pts + " " + pCodecContext->pts_correction_last_pts );
 
 		
-					if( pStreamAudio != null)
+				if( pStreamAudio != null)
+				{
+					if(pPacket->stream_index == iStreamAudioIndex)
 					{
-						if(pPacket->stream_index == iStreamAudioIndex)
-						{
-							int iAudioLen = ffmpeg.avcodec_decode_audio4(pAudioCodecContext, pDecodedAudioFrame, &gotSound, pPacket);
-							if (iAudioLen >= 0) {
-								if (gotSound == 1) {
-									
-									
-                          
-
-                                    
-
-                                    int iDataSize = ffmpeg.av_samples_get_buffer_size(null,pAudioCodecContext->channels,pDecodedAudioFrame->nb_samples,pAudioCodecContext->sample_fmt,1);
-									int iDataSize2 = ffmpeg.av_samples_get_buffer_size(null,pAudioCodecContext->channels,pDecodedAudioFrame->nb_samples,AVSampleFormat.AV_SAMPLE_FMT_FLT,1);
+						int iAudioLen = ffmpeg.avcodec_decode_audio4(pAudioCodecContext, pDecodedAudioFrame, &gotSound, pPacket);
+						if (iAudioLen >= 0) {
+							if (gotSound == 1) {
+                                int iDataSize = ffmpeg.av_samples_get_buffer_size(null,pAudioCodecContext->channels,pDecodedAudioFrame->nb_samples,pAudioCodecContext->sample_fmt,1);
+								int iDataSize2 = ffmpeg.av_samples_get_buffer_size(null,pAudioCodecContext->channels,pDecodedAudioFrame->nb_samples,AVSampleFormat.AV_SAMPLE_FMT_FLT,1);
 					
-                                    if( pAudioCodecContext->sample_fmt != AVSampleFormat.AV_SAMPLE_FMT_FLT)
+                                if( pAudioCodecContext->sample_fmt != AVSampleFormat.AV_SAMPLE_FMT_FLT)
+                                {
+                                    //for(int i = 0; i < pAudioCodecContext->channels; i++)
                                     {
-                                        //for(int i = 0; i < pAudioCodecContext->channels; i++)
-                                        {
-											sbyte* outData =  (sbyte*)Marshal.AllocCoTaskMem(iDataSize2 * sizeof(sbyte));;
-                                           
+										sbyte* outData =  (sbyte*)Marshal.AllocCoTaskMem(iDataSize2 * sizeof(sbyte));;
+                                        
+                                        SwrContext* pAudioCvtContext = null;
+										pAudioCvtContext = ffmpeg.swr_alloc_set_opts( null,(long)pAudioCodecContext->channel_layout, AVSampleFormat.AV_SAMPLE_FMT_FLT,pAudioCodecContext->sample_rate
+                                            ,(long)pAudioCodecContext->channel_layout,pAudioCodecContext->sample_fmt,pAudioCodecContext->sample_rate,0,(void*)0);
 
-                                            SwrContext* pAudioCvtContext = null;
-											pAudioCvtContext = ffmpeg.swr_alloc_set_opts( null,(long)pAudioCodecContext->channel_layout, AVSampleFormat.AV_SAMPLE_FMT_FLT,pAudioCodecContext->sample_rate
-                                                ,(long)pAudioCodecContext->channel_layout,pAudioCodecContext->sample_fmt,pAudioCodecContext->sample_rate,0,(void*)0);
+                                        int error = 0;
 
-                                            int error = 0;
-
-                                            if((error = ffmpeg.swr_init(pAudioCvtContext)) < 0) {
-                                                Debug.Log ("error " + error);
-                                            }
-
-
-								
-											ffmpeg.swr_convert(pAudioCvtContext,&outData,iDataSize2,pDecodedAudioFrame->extended_data,pDecodedAudioFrame->nb_samples );
-									
-
-
-
-
-
-                                          	sbyte* soundFrameAddress = outData;
-
-                                            var soundBufferPtr = new IntPtr (soundFrameAddress);
-
-
-											byte[] buffer = new byte[iDataSize2  ];
-											Marshal.Copy(soundBufferPtr,buffer,0,iDataSize2);
-
-
-
-                                            if ((ulong)pPacket->dts != ffmpeg.AV_NOPTS_VALUE) 
-                                            {
-                                                pts = ffmpeg.av_frame_get_best_effort_timestamp(pDecodedAudioFrame);
-                                            }
-                                            else
-                                            {
-                                                pts = 0;
-                                            }
-
-                                            pts *= av_q2d(pStreamAudio->time_base);
-
-
-											if( bSeekTo == true)
-											{
-												double value = pts * (double)pDecodedAudioFrame->sample_rate / ((double)iDataSize2 / 4 / pDecodedAudioFrame->channels );
-
-												//Debug.Log(value + " " + pts + " " + GetDuration() + " " + pDecodedAudioFrame->pkt_duration);
-
-												iSoundCount = (int)value;
-												bSeekTo = false;
-											}
-
-											while( pts > 600.0f * (iInitCount + 1))
-											{
-												iSoundCount -=  (int)(600.0f * (double)pDecodedAudioFrame->sample_rate / ((double)iDataSize2 / 4 / pDecodedAudioFrame->channels));
-												iInitCount++;;
-											}
-
-											//Debug.Log ("sound " + iSoundCount);
-                                            //Debug.Log (pDecodedAudioFrame->pkt_dts + " " +pDecodedAudioFrame->pkt_duration + " "  + pDecodedAudioFrame->pkt_pos + " " + pDecodedAudioFrame->pkt_pts + " " + pts);
-
-
-                                            fAudioData = new float[buffer.Length / 4];
-                                            Buffer.BlockCopy(buffer, 0, fAudioData, 0, buffer.Length);
-
-
-
-                                   
-                                            lock( listAudio)
-                                            {
-                                                listAudio.Add(fAudioData);
-                                                lock(listAudioPts)
-                                                { 
-													lock(listAudioPtsTime)
-                                                    {
-														//Debug.Log(pDecodedAudioFrame->pkt_pts % pDecodedAudioFrame->pkt_duration + " " + iDataSize2);
-														//listAudioPts.Add(iSoundCount++ * iDataSize2 / 4 / pDecodedAudioFrame->channels );
-
-														/*if( m_strFileName.Contains(".m3u8") )
-														{
-															listAudioPts.Add(pDecodedAudioFrame->pkt_pts / pDecodedAudioFrame->pkt_duration *iDataSize2 / 4 / pDecodedAudioFrame->channels   );
-														}
-														else*/
-														{
-															listAudioPts.Add(iSoundCount++ * iDataSize2 / 4 / pDecodedAudioFrame->channels );
-														}
-														
-                                                        listAudioPtsTime.Add(pts);
-                                                    }
-                                                       
-                                                }
-                                            }
-                                   
-                                            
-
-                                           //Debug.Log ( iDataSize + " "+ pts + " " + pAudioCodecContext->sample_rate + " " + pDecodedAudioFrame->sample_rate + " "+ pDecodedAudioFrame->nb_samples + " " + pDecodedAudioFrame->pkt_pts + " " + pDecodedAudioFrame->pkt_pos);
-                                            //Debug.Log ("sound decode time " + pts);
-                                            //audioClip.SetData(fAudioData,(int)(pAudioCodecContext->sample_rate * pts )   );
-                                            //audioClip.SetData(fAudioData,(int)(pDecodedAudioFrame->pkt_pts )   );
-
-
-                                            ffmpeg.swr_free(&pAudioCvtContext);
-
-                                            Marshal.FreeCoTaskMem((IntPtr)outData);
+                                        if((error = ffmpeg.swr_init(pAudioCvtContext)) < 0) {
+                                            Debug.Log ("error " + error);
                                         }
-
-                                    }
-                                    else
-                                    {
-
-                                        sbyte* soundFrameAddress = pDecodedAudioFrame->extended_data[0];
+                                        
+										ffmpeg.swr_convert(pAudioCvtContext,&outData,iDataSize2,pDecodedAudioFrame->extended_data,pDecodedAudioFrame->nb_samples );
+									
+                                        sbyte* soundFrameAddress = outData;
 
                                         var soundBufferPtr = new IntPtr (soundFrameAddress);
-
-
-                                        byte[] buffer = new byte[iDataSize];
-                                        Marshal.Copy(soundBufferPtr,buffer,0,iDataSize);
-
-
-
+                                        
+										byte[] buffer = new byte[iDataSize2  ];
+										Marshal.Copy(soundBufferPtr,buffer,0,iDataSize2);
+                                        
                                         if ((ulong)pPacket->dts != ffmpeg.AV_NOPTS_VALUE) 
                                         {
                                             pts = ffmpeg.av_frame_get_best_effort_timestamp(pDecodedAudioFrame);
@@ -2657,53 +2499,111 @@ AVHWAccel *ff_find_hwaccel( AVCodecID codec_id,  AVPixelFormat pix_fmt)
                                         }
 
                                         pts *= av_q2d(pStreamAudio->time_base);
+                                        
+										if( bSeekTo == true)
+										{
+											double value = pts * (double)pDecodedAudioFrame->sample_rate / ((double)iDataSize2 / 4 / pDecodedAudioFrame->channels );
 
+											//Debug.Log(value + " " + pts + " " + GetDuration() + " " + pDecodedAudioFrame->pkt_duration);
 
+											iSoundCount = (int)value;
+											bSeekTo = false;
+										}
 
+										while( pts > 600.0f * (iInitCount + 1))
+										{
+											iSoundCount -=  (int)(600.0f * (double)pDecodedAudioFrame->sample_rate / ((double)iDataSize2 / 4 / pDecodedAudioFrame->channels));
+											iInitCount++;;
+										}
+
+										//Debug.Log ("sound " + iSoundCount);
                                         //Debug.Log (pDecodedAudioFrame->pkt_dts + " " +pDecodedAudioFrame->pkt_duration + " "  + pDecodedAudioFrame->pkt_pos + " " + pDecodedAudioFrame->pkt_pts + " " + pts);
-
-
+                                        
                                         fAudioData = new float[buffer.Length / 4];
                                         Buffer.BlockCopy(buffer, 0, fAudioData, 0, buffer.Length);
-
+                                        
                                         lock( listAudio)
                                         {
                                             listAudio.Add(fAudioData);
                                             lock(listAudioPts)
-                                            {
-												lock(listAudioPts)
-												{
-                                                	listAudioPts.Add(pts);
-                                                	listAudioPtsTime.Add(pts);
-												}
-                                                
+                                            { 
+												lock(listAudioPtsTime)
+                                                {
+													//Debug.Log(pDecodedAudioFrame->pkt_pts % pDecodedAudioFrame->pkt_duration + " " + iDataSize2);
+													//listAudioPts.Add(iSoundCount++ * iDataSize2 / 4 / pDecodedAudioFrame->channels );
+
+													/*if( m_strFileName.Contains(".m3u8") )
+													{
+														listAudioPts.Add(pDecodedAudioFrame->pkt_pts / pDecodedAudioFrame->pkt_duration *iDataSize2 / 4 / pDecodedAudioFrame->channels   );
+													}
+													else*/
+													{
+														listAudioPts.Add(iSoundCount++ * iDataSize2 / 4 / pDecodedAudioFrame->channels );
+													}
+														
+                                                    listAudioPtsTime.Add(pts);
+                                                }
+                                                       
                                             }
                                         }
-
-
-                                        //Debug.Log ( pDecodedAudioFrame->channels + " "+buffer.Length / 4 + " " + pDecodedAudioFrame->pkt_pts + " " + pDecodedAudioFrame->pkt_pos);
+                                   
+                                        //Debug.Log ( iDataSize + " "+ pts + " " + pAudioCodecContext->sample_rate + " " + pDecodedAudioFrame->sample_rate + " "+ pDecodedAudioFrame->nb_samples + " " + pDecodedAudioFrame->pkt_pts + " " + pDecodedAudioFrame->pkt_pos);
                                         //Debug.Log ("sound decode time " + pts);
+                                        //audioClip.SetData(fAudioData,(int)(pAudioCodecContext->sample_rate * pts )   );
+                                        //audioClip.SetData(fAudioData,(int)(pDecodedAudioFrame->pkt_pts )   );
                                         
+                                        ffmpeg.swr_free(&pAudioCvtContext);
+
+                                        Marshal.FreeCoTaskMem((IntPtr)outData);
+                                    }
+                                }
+                                else
+                                {
+                                    sbyte* soundFrameAddress = pDecodedAudioFrame->extended_data[0];
+
+                                    var soundBufferPtr = new IntPtr (soundFrameAddress);
+                                    
+                                    byte[] buffer = new byte[iDataSize];
+                                    Marshal.Copy(soundBufferPtr,buffer,0,iDataSize);
+                                    
+                                    if ((ulong)pPacket->dts != ffmpeg.AV_NOPTS_VALUE) 
+                                    {
+                                        pts = ffmpeg.av_frame_get_best_effort_timestamp(pDecodedAudioFrame);
+                                    }
+                                    else
+                                    {
+                                        pts = 0;
                                     }
 
-								}
+                                    pts *= av_q2d(pStreamAudio->time_base);
+                                    
+                                    //Debug.Log (pDecodedAudioFrame->pkt_dts + " " +pDecodedAudioFrame->pkt_duration + " "  + pDecodedAudioFrame->pkt_pos + " " + pDecodedAudioFrame->pkt_pts + " " + pts);
+                                    
+                                    fAudioData = new float[buffer.Length / 4];
+                                    Buffer.BlockCopy(buffer, 0, fAudioData, 0, buffer.Length);
+
+                                    lock( listAudio)
+                                    {
+                                        listAudio.Add(fAudioData);
+                                        lock(listAudioPts)
+                                        {
+											lock(listAudioPts)
+											{
+                                                listAudioPts.Add(pts);
+                                                listAudioPtsTime.Add(pts);
+											}                                       
+                                        }
+                                    }
+                                    
+                                    //Debug.Log ( pDecodedAudioFrame->channels + " "+buffer.Length / 4 + " " + pDecodedAudioFrame->pkt_pts + " " + pDecodedAudioFrame->pkt_pos);
+                                    //Debug.Log ("sound decode time " + pts);    
+                                }
 							}
 						}
 					}
-					
-
-					
-				}while(pPacket->stream_index != iStreamIndex);
-
- 
-				
-
-				
+				}
+			}while(pPacket->stream_index != iStreamIndex);
 		}
-			
-			
-			
-
 	}
 	
 	int  iSoundBufferCount = 0;
