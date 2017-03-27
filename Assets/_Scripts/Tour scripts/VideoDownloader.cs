@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System;
+using System.Net;
 
 public class VideoDownloader : MonoBehaviour {
     [Serializable]
@@ -29,7 +30,7 @@ public class VideoDownloader : MonoBehaviour {
     // 93 MB -> 24 seconds
     // 11 MB -> 3.5 seconds
     // 16.7 MB -> ~5 seconds
-    IEnumerator Save() {
+    static public IEnumerator Save() {
         Debug.Log("In Save");
         //yield return null;
         //BinaryFormatter bf = new BinaryFormatter();
@@ -48,6 +49,27 @@ public class VideoDownloader : MonoBehaviour {
         file.Close();
 
         Debug.Log("Done downloading and writing. Time to download: " + (Time.time - timeStart).ToString());
+    }
+    
+    // Run on main thread as coroutine
+    static public IEnumerator Save(string filename, string url) {
+        Debug.Log("In Save: " + filename + " from " + url);
+
+        float timeStart = Time.time;
+        FileStream file = File.Open(filename, FileMode.Create);
+        WWW videoWWW = new WWW(url);
+        yield return videoWWW;
+        file.Write(videoWWW.bytes, 0, videoWWW.bytes.Length);
+        file.Close();
+
+        Debug.Log("Done downloading and writing. Time to download: " + (Time.time - timeStart).ToString());
+    }
+
+    public static string getMediaCompatDatapath(string filename) {
+        string s = Application.persistentDataPath + "/" + filename;
+        if (s.Contains("C:/"))
+            return "C://" + s.Substring(3);
+        return null;
     }
 
     void Load() {

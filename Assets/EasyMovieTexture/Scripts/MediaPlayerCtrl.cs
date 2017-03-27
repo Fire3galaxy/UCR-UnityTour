@@ -26,7 +26,7 @@ public class MediaPlayerCtrl : MonoBehaviour
     public GameObject[] m_TargetMaterial = null;
     private Texture2D m_VideoTexture = null;
     private Texture2D m_VideoTextureDummy = null;
-    private MEDIAPLAYER_STATE m_CurrentState;
+    public MEDIAPLAYER_STATE m_CurrentState;
     private int m_iCurrentSeekPosition;
     private float m_fVolume = 1.0f;
     private int m_iWidth;
