@@ -5,8 +5,8 @@ using System.Threading;
 
 public class TourVideos : Photon.MonoBehaviour {
     public string FirstVideo;           // URL or StreamingAsset name of first video
+    public MediaPlayerCtrl mediaPlayer;
 
-    private MediaPlayerCtrl mediaPlayer;
     private bool playOnLoad;    // Used to stop movie from playing after loading during login menu
     private string[] manifest;
     private int currentVideo;
@@ -16,7 +16,6 @@ public class TourVideos : Photon.MonoBehaviour {
     string persistentPath;
     float timeStart;
     bool logThread;
-    // Lock isn't working. FIXME: Figure out why so we can update this in thread
     bool threadIsDone;
     bool ThreadIsDone
     {
@@ -43,15 +42,15 @@ public class TourVideos : Photon.MonoBehaviour {
         currentVideo = 0;
 
         // Setup callback functions
-        mediaPlayer = GetComponent<MediaPlayerCtrl>();
         mediaPlayer.OnReady += OnLoadedVideo;
         mediaPlayer.OnEnd += OnEnd;
         mediaPlayer.OnVideoError += OnVideoError;
         mediaPlayer.OnVideoFirstFrameReady += OnVideoFirstFrameReady;
 
-        //loadFirstVideoTest(FirstVideo);
+        // FIXME: Debug Testing. These functions are called immediately (So no UI should be visible)
+        loadFirstVideoTest(FirstVideo);
         //mediaPlayer.Load("C:///Users/Daniel/AppData/LocalLow/Sky/MyVR/video.mp4");
-        StartCoroutine(loadManifestVideoOnlineTest());
+        //StartCoroutine(loadManifestVideoOnlineTest());
     }
 
     void Update() {
@@ -123,9 +122,11 @@ public class TourVideos : Photon.MonoBehaviour {
     }
     
     private void saveNextVideoTest() {
-        string videoFilename = Application.persistentDataPath + "/" + manifest[0].Substring(6) + "-"
-            + (currentVideo + 1).ToString() + ".mp4";
-        StartCoroutine(VideoDownloader.Save(videoFilename, manifest[currentVideo + 3]));
+        //string videoFilename = Application.persistentDataPath + "/" + manifest[0].Substring(6) + "-"
+        //    + (currentVideo + 1).ToString() + ".mp4";
+        //StartCoroutine(VideoDownloader.Save(videoFilename, manifest[currentVideo + 3]));
+        //string videoFilename = Application.persistentDataPath + "/cafe-1.mp4";
+        //StartCoroutine(VideoDownloader.Save(videoFilename, "http://jiasiproj.cs.ucr.edu/Windows/1st%20floor%20of%20bourns/Synced%20Videos/Video1/0.kava.mp4"));
     }
 
     private void downloadVideoThreadTest() {
