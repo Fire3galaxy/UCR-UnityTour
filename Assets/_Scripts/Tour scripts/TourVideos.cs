@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using System.Threading;
+using System.Collections.Generic;
 
 public class TourVideos : Photon.MonoBehaviour {
     public string FirstVideo;           // URL or StreamingAsset name of first video
@@ -10,6 +11,9 @@ public class TourVideos : Photon.MonoBehaviour {
     private bool playOnLoad;    // Used to stop movie from playing after loading during login menu
     private string[] manifest;
     private int currentVideo;
+
+    //hold filenames for the downloaded videos
+    private Queue<String> videoQueue;
 
     // For the thread tests
     object thisLock = new object();
@@ -40,6 +44,7 @@ public class TourVideos : Photon.MonoBehaviour {
         ThreadIsDone = false;
         logThread = false;
         playOnLoad = false;
+        videoQueue = new Queue<String>();
         currentVideo = 0;
 
         // Setup callback functions
@@ -73,9 +78,6 @@ public class TourVideos : Photon.MonoBehaviour {
 
         char[] delimiters = { '\r', '\n' };
         manifest = System.Text.Encoding.ASCII.GetString(bourns1.bytes).Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-        //mediaPlayer.Load(manifest[currentIndex]);
-        
-        //string videoFilename = manifest[0].Substring(6) + "-" + currentVideo.ToString() + ".mp4";
         mediaPlayer.Load(manifest[currentVideo + 2]);   // 1st video
         //yield return VideoDownloader.Save(videoFilename, manifest[currentVideo + 3]); // 2nd video
         //mediaPlayer.Load(VideoDownloader.getMediaCompatDatapath(videoFilename));
@@ -104,8 +106,13 @@ public class TourVideos : Photon.MonoBehaviour {
     // Try downloading locally first?
     private void OnEnd() {
         Debug.Log("Video end: " + mediaPlayer.m_strFileName);
-        //if (manifest != null)
-        //    mediaPlayer.Load(manifest[++currentIndex]);
+        if (manifest != null && videoQueue.Count != 0)
+        {
+            //load next video
+            string nextVideo = videoQueue.Dequeue();
+            Debug.Log("Loading next video " + nextVideo);
+            mediaPlayer.Load(nextVideo);
+        }
         mediaPlayer.SeekTo(0);
         mediaPlayer.Play();
     }
@@ -119,13 +126,35 @@ public class TourVideos : Photon.MonoBehaviour {
         Debug.Log("OnVideoFirstFrameReady");
 
         // Download next video with coroutine while current video plays
-        saveNextVideoTest();
+        String filename = getNextVideo();
+        videoQueue.Enqueue(filename);
     }
-    
-    private void saveNextVideoTest() {
-        string videoFilename = Application.persistentDataPath + "/" + manifest[0].Substring(6) + "-"
-            + (currentVideo + 1).ToString() + ".mp4";
-        StartCoroutine(VideoDownloader.Save(videoFilename, manifest[currentVideo + 3]));
+
+    private String getNextVideo() {
+        //wonky hackish if statement to loop the videos
+        if (currentVideo >= manifest.Length - 3) {
+            currentVideo = 0;
+        }
+        else {
+            currentVideo++;
+        }
+
+        string filename = manifest[0].Substring(6) + "-" + currentVideo.ToString() + ".mp4";
+        string filepath = Application.streamingAssetsPath + "/";
+        string file = filepath + filename;
+
+        Debug.Log("Next Video: " + filename);
+
+        if (!System.IO.File.Exists(file)){
+            saveNextVideo(file);
+        }
+
+        return filename;
+    }
+
+    //saves next video and returns the filename
+    private void saveNextVideo(string savePath) {
+        StartCoroutine(VideoDownloader.Save(savePath, manifest[currentVideo + 2]));
     }
 
     private void downloadVideoThreadTest() {
