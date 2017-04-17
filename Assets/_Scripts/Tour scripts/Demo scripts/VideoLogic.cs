@@ -12,12 +12,13 @@ public class VideoLogic : Photon.PunBehaviour {
     public GameObject AnnotationPrefab;
     public TourLibrary videoLibrary;
 
-    // FUNCTIONS TO SWITCH FROM UI MODE TO VR/TOUR MODE
+    // FUNCTIONS TO SWITCH FROM UI MODE TO VR/TOUR MODE & BACK
     // Called by UI objects. Changes from UI to Tour objects
     public void SwitchToTourLogic() {
-        UICanvas.SetActive(false); // Remove canvas
-        SetupCardboardView();
-        if (playOnLoad)
+        UICanvas.SetActive(false);  // Remove canvas
+        SetupCardboardView();   // Change settings for cardboard
+
+        if (playOnLoad) // Play first loaded video
             mediaPlayer.Play();
         else
             playOnLoad = true;
@@ -25,19 +26,52 @@ public class VideoLogic : Photon.PunBehaviour {
 
     // Google Cardboard Settings, phone orientation
     private void SetupCardboardView() {
-        // Add VR View
-        //VRSettings.LoadDeviceByName("cardboard");
+        // Add VR View if needed
+        if (GvrViewer.Instance != null) {
+            GvrViewer.Instance.VRModeEnabled = true;
+        } else {
+            Instantiate(GvrViewerPrefab, Camera.main.transform);
+            Instantiate(GvrReticlePrefab, Camera.main.transform);
+        }
+
+        // VR View is landscape
         VRSettings.enabled = true;
         Screen.orientation = ScreenOrientation.LandscapeLeft;
-        Instantiate(GvrViewerPrefab, Camera.main.transform);
-        Instantiate(GvrReticlePrefab, Camera.main.transform);
-        Debug.Log("Should be in VR mode");
 
         // Change eventsystem input module
         EventSystem.GetComponent<StandaloneInputModule>().enabled = false;
         EventSystem.GetComponent<GvrPointerInputModule>().enabled = true;
+
+        Debug.Log("Should be in VR mode");
     }
-    
+
+    private void SwitchToUILogic() {
+        // Leave Room
+        PhotonNetwork.LeaveRoom();
+
+        // Stop tour
+        mediaPlayer.Stop();
+        RemoveCardboardView();
+
+        // Reset UI Screen back to home page
+        MainMenuLogic UILogic = GetComponent<MainMenuLogic>();
+        UILogic.BackToHomeScreen();
+        UICanvas.SetActive(true);
+    }
+
+    // Google Cardboard Settings, phone orientation
+    private void RemoveCardboardView() {
+        // Remove VR View
+        VRSettings.enabled = false;
+        GvrViewer.Instance.VRModeEnabled = false;
+        Screen.orientation = ScreenOrientation.Portrait;;
+        Debug.Log("Should be out of VR mode");
+
+        // Change eventsystem input module
+        EventSystem.GetComponent<StandaloneInputModule>().enabled = true;
+        EventSystem.GetComponent<GvrPointerInputModule>().enabled = false;
+    }
+
     // FUNCTIONS TO CONTROL VIDEO PLAYBACK IN TOUR MODE
     public MediaPlayerCtrl mediaPlayer;
     private bool playOnLoad;    // Used to stop movie from playing after loading during login menu
@@ -52,6 +86,11 @@ public class VideoLogic : Photon.PunBehaviour {
         
         // Load first video
         LoadVideo(0);
+    }
+
+    void Update() {
+        if (Input.GetKeyDown(KeyCode.Escape))
+            SwitchToUILogic();
     }
 
     private void CheckAndPlayVideo() {
@@ -131,7 +170,8 @@ public class VideoLogic : Photon.PunBehaviour {
     // FUNCTION TO CHANGE VIDEO
     // For ECE Day Demo: Functions for buttons from Video Controller UI prefab
     public void NetworkChangeVideo(int vidNum) {
-        LoadVideo(vidNum);
+        if (!PhotonNetwork.isMasterClient)
+            LoadVideo(vidNum);
     }
 
     // CALLBACKS TO PHOTON

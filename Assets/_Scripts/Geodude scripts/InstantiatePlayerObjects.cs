@@ -4,8 +4,9 @@ using System.Collections;
 
 public class InstantiatePlayerObjects : Photon.MonoBehaviour {
     public GameObject avatarPrefab;
-    public GameObject masterClientCanvas;
-    public GameObject videoControllerUIPrefab; // For ECE Day Presentation. Lets masterclient determine video played
+    public GameObject masterClientUIPrefab; // For ECE Day Presentation. Lets masterclient determine video played
+
+    static public GameObject masterClientUI = null;
 
     public void OnJoinedRoom()
     {
@@ -19,18 +20,17 @@ public class InstantiatePlayerObjects : Photon.MonoBehaviour {
         if (PhotonNetwork.isMasterClient) {
             Debug.Log("You are master client");
 
+            // Instantiate Video Controls
+            masterClientUI = Instantiate(masterClientUIPrefab);
+            Button[] buttons = masterClientUI.GetComponentsInChildren<Button>();
+
+            // Give actions to corresponding buttons
             VideoControls controls = avatarGameObject.GetComponent<VideoControls>();
-
-            GameObject controllerObject = Instantiate(videoControllerUIPrefab);
-            Button[] buttons = controllerObject.GetComponentsInChildren<Button>();
-
-            foreach (Button b in buttons)
-                b.GetComponent<VideoControllerButton>().videoControls = controls;
-
-            //GameObject menuObject = Instantiate(masterClientCanvas);
-
-            //Button button = menuObject.transform.GetComponentInChildren<Button>();
-            //button.onClick.AddListener(controls.MovePlayersToNextVideo);
+            for (int i = 0; i < buttons.Length; i++) {
+                VideoControllerButton controllerButton = buttons[i].GetComponent<VideoControllerButton>();
+                controllerButton.setVideoControls(controls);
+                controllerButton.setIndex(i);
+            }   
         }
     }
 }

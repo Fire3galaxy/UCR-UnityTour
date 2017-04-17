@@ -26,8 +26,7 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     public GameObject JoinRoomScreen;
     public GameObject EnterRoomScreen;
     public GameObject ListButtonPrefab;
-
-    private bool ConnectedInUpdate = false;
+    
     private States GameState = States.HomeScreen;
 	
     void Start() {
@@ -38,10 +37,9 @@ public class MainMenuLogic : Photon.MonoBehaviour {
 	// Update is called once per frame
 	public virtual void Update ()
     {
-        if (!ConnectedInUpdate) {
+        if (!PhotonNetwork.connecting && !PhotonNetwork.connected) {
             Debug.Log("In update");
             PhotonNetwork.ConnectUsingSettings(Version + ".0");
-            ConnectedInUpdate = true;
         }
     }
 
@@ -60,7 +58,8 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     public void OnConnectionFail(DisconnectCause cause) {
         Debug.LogError("OnConnectionFail(): " + cause.ToString());
     }
-
+    
+    // Changes EnterRoomScreen text and sprite after room is joined
     public virtual void OnJoinedRoom() {
         switch (GameState) {
             case States.CreateRoomScreen:
@@ -95,14 +94,18 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         LoadingImage.gameObject.SetActive(true);
         LoadingText.gameObject.SetActive(true);
 
-        // Remove anything else
+        // Remove anything else & reset values
         CreateRoomScreen.SetActive(false);
         JoinRoomScreen.SetActive(false);
         EnterRoomScreen.SetActive(false);
 
+        LoadingImage.sprite = NotLoadedSprite;  // Enter Room Screen values
+        EnterRoomScreen.GetComponentInChildren<Button>(true).gameObject.SetActive(false);
+        DeleteRoomList();   // Join Room Screen
+        QuitButtonText.text = QUIT; // Home Screen
+
         // Update state
         GameState = States.HomeScreen;
-        QuitButtonText.text = QUIT;
     }
 
     public void OnClickCreateRoom() {
@@ -154,12 +157,6 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         PopulateRoomList();
     }
     
-    public void OnClickToRoom() {
-        Debug.Log("To the room now!");
-        GameState = States.TourScreen;
-        GetComponent<VideoLogic>().SwitchToTourLogic();
-    }
-
     public void OnClickRoomItem(string roomName) {
         Debug.Log("Clicked on: " + roomName);
 
@@ -205,6 +202,12 @@ public class MainMenuLogic : Photon.MonoBehaviour {
             roomItem.GetComponentInChildren<Text>().text = room.name;
             roomItem.GetComponent<Button>().onClick.AddListener(itemLogic.OnClickRoomItem);
         }
+    }
+
+    public void OnClickToRoom() {
+        Debug.Log("To the room now!");
+        GameState = States.TourScreen;
+        GetComponent<VideoLogic>().SwitchToTourLogic();
     }
 
     public void TestClick() {

@@ -8,7 +8,7 @@ public class UserPicMechanic : Photon.MonoBehaviour {
     private GameObject userPicObject = null;
 
     void Update() {
-        if (!photonView.isMine && photonView.ownerId != PhotonNetwork.masterClient.ID) {
+        if (!photonView.isMine && photonView.owner.ID != PhotonNetwork.masterClient.ID) {
             if (userPicObject == null)
                 createUserPic();
             else
