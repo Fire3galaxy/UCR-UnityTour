@@ -11,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 
 public class VideoDownloader : MonoBehaviour {
     public Text text;
+    string storagePath;
 
     [Serializable]
     class Test {
@@ -22,11 +23,13 @@ public class VideoDownloader : MonoBehaviour {
         }
     }
 
-    void Start() {
-        Debug.Log(Application.persistentDataPath);
-        //TestAllFunctions();
-        newThread();
-    }
+    // Start function is for debug download tests
+    //void Start() {
+    //    storagePath = Application.persistentDataPath;
+    //    Debug.Log(Application.persistentDataPath);
+    //    //TestAllFunctions();
+    //    //newThread();
+    //}
 
     void newThread() {
         Thread thread = new Thread(new ThreadStart(downloadVideo));
@@ -58,12 +61,13 @@ public class VideoDownloader : MonoBehaviour {
     // Works. FIXME: Next time, switch this over to jiasi cs server
     void downloadVideo() {
         Debug.Log("HERE");
-        string url = "https://www.dropbox.com/s/f19oblkapdq9oa0/bourns1-0.mp4?dl=1";
-        string filename = @"C:\Users\Daniel\Documents\Visual Studio 2015\Projects"
-            + @"\ConsoleApplication1\ConsoleApplication1\bourns1.mp4";
-        ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
+        string url = "http://jiasiproj.cs.ucr.edu/Windows/1st%20floor%20of%20bourns/Synced%20Videos/Video1/0.kava.mp4"; //"https://www.dropbox.com/s/f19oblkapdq9oa0/bourns1-0.mp4?dl=1";
+        //string filename = @"C:\Users\Daniel\Documents\Visual Studio 2015\Projects"
+        //    + @"\ConsoleApplication1\ConsoleApplication1\bourns1.mp4";
+        string filename = storagePath + "/bourns1.mp4";
+        //ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
         WebClient client = new WebClient();
-        //client.Proxy = new WebProxy("127.0.0.1", 8888); // Check that this works once server is up
+        client.Proxy = new WebProxy("127.0.0.1", 8888); // Check that this works once server is up
         try {
             client.DownloadFile(url, filename);
         } catch (WebException we) {

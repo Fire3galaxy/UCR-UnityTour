@@ -157,7 +157,7 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     public void OnClickToRoom() {
         Debug.Log("To the room now!");
         GameState = States.TourScreen;
-        GetComponent<TourLogic>().SwitchToTourLogic();
+        GetComponent<VideoLogic>().SwitchToTourLogic();
     }
 
     public void OnClickRoomItem(string roomName) {

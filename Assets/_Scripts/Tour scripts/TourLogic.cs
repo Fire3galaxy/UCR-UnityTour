@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.VR;
 using System.Collections;
 
-public class TourLogic : Photon.MonoBehaviour {
+public class TourLogic : MonoBehaviour {
     public GameObject UICanvas;
     public GameObject EventSystem;
     public GameObject GvrViewerPrefab;

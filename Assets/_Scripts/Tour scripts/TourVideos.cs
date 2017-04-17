@@ -43,14 +43,15 @@ public class TourVideos : Photon.MonoBehaviour {
 
         // Setup callback functions
         mediaPlayer.OnReady += OnLoadedVideo;
-        mediaPlayer.OnEnd += OnEnd;
-        mediaPlayer.OnVideoError += OnVideoError;
-        mediaPlayer.OnVideoFirstFrameReady += OnVideoFirstFrameReady;
+        //mediaPlayer.OnEnd += OnEnd;
+        //mediaPlayer.OnVideoError += OnVideoError;
+        //mediaPlayer.OnVideoFirstFrameReady += OnVideoFirstFrameReady;
 
         // FIXME: Debug Testing. These functions are called immediately (So no UI should be visible)
-        loadFirstVideoTest(FirstVideo);
+        //loadFirstVideoTest(FirstVideo);
         //mediaPlayer.Load("C:///Users/Daniel/AppData/LocalLow/Sky/MyVR/video.mp4");
         //StartCoroutine(loadManifestVideoOnlineTest());
+        mediaPlayer.Load(FirstVideo);
     }
 
     void Update() {
