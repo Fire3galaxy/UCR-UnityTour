@@ -1,17 +1,18 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.VR;
-using System.Collections.Generic;
 
 public class MainMenuLogic : Photon.MonoBehaviour {
-    enum States { HomeScreen, CreateRoomScreen, JoinRoomScreen, EnterRoomScreen, TourScreen };
+    enum States { HomeScreen, CreateRoomScreen, JoinRoomScreen, EnterRoomScreen, TourParticipantScreen, TourGuideScreen };
+
+    static public MainMenuLogic instance;
+    public float Version = 1.0f;
 
     private const string QUIT = "Quit"; // Quit button strings
     private const string BACK = "Back";
 
-    public byte Version = 1;
-
-    // Quit/Back button
+    // Objects that are used for all user screens
+    public GameObject UICanvas;
     public Text QuitButtonText;
 
     // Objects that indicate Loading
@@ -25,24 +26,25 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     public GameObject CreateRoomScreen;
     public GameObject JoinRoomScreen;
     public GameObject EnterRoomScreen;
-    public GameObject ListButtonPrefab;
     
     private States GameState = States.HomeScreen;
-	
+
     void Start() {
+        instance = this;    // For easy access by other classes. Only one instance ever exists, right?
+
         VRSettings.enabled = false;
         Screen.orientation = ScreenOrientation.Portrait;
     }
-
-	// Update is called once per frame
+    
 	public virtual void Update ()
     {
         if (!PhotonNetwork.connecting && !PhotonNetwork.connected) {
-            Debug.Log("In update");
-            PhotonNetwork.ConnectUsingSettings(Version + ".0");
+            Debug.Log("In update: connecting");
+            PhotonNetwork.ConnectUsingSettings(Version.ToString("N1")); // 1 place after decimal
         }
     }
 
+    // Occurs at HomeScreen, after connected to Photon in Update()
     public virtual void OnJoinedLobby()
     {
         Debug.Log("Joined Lobby");
@@ -58,25 +60,87 @@ public class MainMenuLogic : Photon.MonoBehaviour {
     public void OnConnectionFail(DisconnectCause cause) {
         Debug.LogError("OnConnectionFail(): " + cause.ToString());
     }
-    
-    // Changes EnterRoomScreen text and sprite after room is joined
+
+    /* Changes text and sprite after room is joined. You join a room either by 
+     * creating one (from CreateRoomScreen) or joining one (from JoinRoomScreen). 
+     */
     public virtual void OnJoinedRoom() {
         switch (GameState) {
+            // Go to Tour Participant UI
             case States.CreateRoomScreen:
-                EnterRoomScreen.GetComponentInChildren<Text>().text = "Room created!\n<size=40>"
-                    + PhotonNetwork.room.name + "</size>";
+                UICanvas.SetActive(false);
+                GameState = States.TourGuideScreen;
+                GetComponent<GuideLogic>().SwitchToGuideLogic();
                 break;
+            // Go to EnterRoomScreen
             case States.JoinRoomScreen:
                 EnterRoomScreen.GetComponentInChildren<Text>().text = "Joined room!\n<size=40>"
                     + PhotonNetwork.room.name + "</size>";
+                LoadingImage.sprite = LoadedSprite;
+                EnterRoomScreen.GetComponentInChildren<Button>(true).gameObject.SetActive(true);
+                GameState = States.EnterRoomScreen;
                 break;
         }
-
-        LoadingImage.sprite = LoadedSprite;
-        EnterRoomScreen.GetComponentInChildren<Button>(true).gameObject.SetActive(true);
-        GameState = States.EnterRoomScreen;
     }
 
+    // For JoinRoomScreen. Keeps the list of open rooms updated.
+    public virtual void OnReceivedRoomListUpdate() {
+        if (GameState == States.JoinRoomScreen) {
+            DeleteRoomList();
+            PopulateRoomList();
+        }
+    }
+
+    // Used whenever we return to the main menu. Resets UI to HomeScreen.
+    public void BackToHomeScreen() {
+        // Add home page and loading screen
+        HomeScreen.SetActive(true);
+        LoadingImage.gameObject.SetActive(true);
+        LoadingText.gameObject.SetActive(true);
+
+        // Remove anything else & reset values
+        CreateRoomScreen.SetActive(false);
+        JoinRoomScreen.SetActive(false);
+        EnterRoomScreen.SetActive(false);
+        EnterRoomScreen.GetComponentInChildren<Button>(true).gameObject.SetActive(false);
+
+        if (PhotonNetwork.insideLobby)
+            LoadingImage.sprite = LoadedSprite;
+        else
+            LoadingImage.sprite = NotLoadedSprite;
+        
+        DeleteRoomList();           // Join Room Screen
+        QuitButtonText.text = QUIT; // Home Screen
+
+        UICanvas.SetActive(true);   // Now that all UI is reset, make UI visible
+
+        // Update state
+        GameState = States.HomeScreen;
+    }
+
+    // Used in OnReceivedRoomListUpdate by JoinRoomScreen to delete room views
+    private void DeleteRoomList() {
+        ListView listView = JoinRoomScreen.GetComponentInChildren<ListView>();
+        listView.DestroyAllViews();
+    }
+
+    // Used in OnReceivedRoomListUpdate by JoinRoomScreen to add updated rooms
+    private void PopulateRoomList() {
+        ListView listView = JoinRoomScreen.GetComponentInChildren<ListView>();
+
+        // Add rooms to list
+        RoomInfo[] rooms = PhotonNetwork.GetRoomList();
+        foreach (RoomInfo room in rooms) {
+            // Add item to listview
+            GameObject roomItem = listView.AddView();
+
+            // Edit item name
+            roomItem.name = room.name;
+            roomItem.GetComponentInChildren<Text>().text = room.name;
+        }
+    }
+
+    // ALL ONCLICK LISTENER FUNCTIONS FOR BUTTONS
     public void OnClickQuit() {
         switch (GameState) {
             case States.HomeScreen:
@@ -88,26 +152,7 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         }
     }
 
-    public void BackToHomeScreen() {
-        // Add home page and loading screen
-        HomeScreen.SetActive(true);
-        LoadingImage.gameObject.SetActive(true);
-        LoadingText.gameObject.SetActive(true);
-
-        // Remove anything else & reset values
-        CreateRoomScreen.SetActive(false);
-        JoinRoomScreen.SetActive(false);
-        EnterRoomScreen.SetActive(false);
-
-        LoadingImage.sprite = NotLoadedSprite;  // Enter Room Screen values
-        EnterRoomScreen.GetComponentInChildren<Button>(true).gameObject.SetActive(false);
-        DeleteRoomList();   // Join Room Screen
-        QuitButtonText.text = QUIT; // Home Screen
-
-        // Update state
-        GameState = States.HomeScreen;
-    }
-
+    // Transition from HomeScreen to CreateRoomScreen
     public void OnClickCreateRoom() {
         // Remove home page and loading screen
         HomeScreen.SetActive(false);
@@ -122,6 +167,7 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         QuitButtonText.text = BACK;
     }
 
+    // CreateRoomScreen to EnterRoomScreen (if room created successfully. See onJoinedRoom)
     public void OnClickSubmitRoom() {
         // Views in CreateRoomScreen
         InputField roomInputField = CreateRoomScreen
@@ -140,8 +186,10 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         PhotonNetwork.CreateRoom(roomName);
     }
 
+    // HomeScreen to JoinRoomScreen
     public void OnClickJoinRoom() {
         Debug.Log("Clicked Join Room");
+
         // Remove home page and loading screen
         HomeScreen.SetActive(false);
         LoadingImage.gameObject.SetActive(false);
@@ -156,7 +204,8 @@ public class MainMenuLogic : Photon.MonoBehaviour {
 
         PopulateRoomList();
     }
-    
+
+    // JoinRoomScreen to EnterRoomScreen (if joined room successfully. See onJoinedRoom)
     public void OnClickRoomItem(string roomName) {
         Debug.Log("Clicked on: " + roomName);
 
@@ -165,52 +214,18 @@ public class MainMenuLogic : Photon.MonoBehaviour {
         LoadingImage.sprite = NotLoadedSprite;  // Enter Room Screen state
         LoadingImage.gameObject.SetActive(true);
         EnterRoomScreen.SetActive(true);
-        EnterRoomScreen.GetComponentInChildren<Text>().text = 
+        EnterRoomScreen.GetComponentInChildren<Text>().text =
             "Joining room:\n<size=40>" + roomName + "</size>";
 
         PhotonNetwork.JoinRoom(roomName);
     }
 
-    public virtual void OnReceivedRoomListUpdate() {
-        if (GameState == States.JoinRoomScreen) {
-            DeleteRoomList();
-            PopulateRoomList();
-        }
-    }
-
-    private void DeleteRoomList() {
-        RoomNameHolder[] listedRooms = 
-            JoinRoomScreen.GetComponentsInChildren<RoomNameHolder>();
-        foreach (RoomNameHolder room in listedRooms)
-            Destroy(room.gameObject);
-    }
-
-    private void PopulateRoomList() {
-        // List Views needed
-        VerticalLayoutGroup ListContent = JoinRoomScreen
-            .GetComponentInChildren<VerticalLayoutGroup>();
-
-        // Add rooms to list
-        RoomInfo[] rooms = PhotonNetwork.GetRoomList();
-        foreach (RoomInfo room in rooms) {
-            GameObject roomItem = (GameObject) 
-                Instantiate(ListButtonPrefab, ListContent.transform);
-            RoomNameHolder itemLogic = roomItem.GetComponent<RoomNameHolder>();
-            itemLogic.roomName = room.name;
-            itemLogic.gameLogic = this;
-            roomItem.name = room.name;
-            roomItem.GetComponentInChildren<Text>().text = room.name;
-            roomItem.GetComponent<Button>().onClick.AddListener(itemLogic.OnClickRoomItem);
-        }
-    }
-
+    // TourParticipantScreen to VideoLogic (separate file)
     public void OnClickToRoom() {
         Debug.Log("To the room now!");
-        GameState = States.TourScreen;
-        GetComponent<VideoLogic>().SwitchToTourLogic();
-    }
 
-    public void TestClick() {
-        Debug.Log("Clicked in test");
+        GameState = States.TourParticipantScreen;
+        UICanvas.SetActive(false);
+        GetComponent<ParticipantLogic>().SwitchToTourLogic();
     }
 }
